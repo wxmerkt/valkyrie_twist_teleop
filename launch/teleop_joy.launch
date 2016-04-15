@@ -1,0 +1,14 @@
+<launch>
+	<node name="joy_node" pkg="joy" type="joy_node">
+		<param name="autorepeat_rate" value="10"/>
+	</node>
+	<node name="robot_mover" pkg="robot_mover" type="mover.py">
+		<!-- <param name="initial_leg_aperture" value="0.4" /> -->
+		<param name="linear_speed_limit" value="0.01" /> <!--0.1-->
+		<param name="angular_speed_limit" value="0.045" /> <!--0.09-->
+		<param name="moving_time" value="2.0" /> <!--1.0-->
+	</node>
+	<node name="joy_teleop" pkg="robot_mover" type="joy_teleop.py">
+		<remap from="cmd_vel" to="/ihmc_ros/valkyrie/control/cmd_vel" />
+	</node>
+</launch>
