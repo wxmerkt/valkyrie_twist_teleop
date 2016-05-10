@@ -3,7 +3,7 @@
 		<param name="autorepeat_rate" value="10"/>
 	</node>
 	<node name="mover" pkg="valkyrie_twist_teleop" type="mover.py">
-		<!-- <param name="initial_leg_aperture" value="0.4" /> -->
+		<param name="initial_leg_aperture" value="0.3" />
 		<param name="linear_speed_limit" value="0.01" /> <!--0.1-->
 		<param name="angular_speed_limit" value="0.045" /> <!--0.09-->
 		<param name="moving_time" value="2.0" /> <!--1.0-->
