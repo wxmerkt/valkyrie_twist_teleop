@@ -11,8 +11,6 @@ RIGHT = 1
 
 global steps_pub
 global rate
-global USING_NEW_MSGS
-USING_NEW_MSGS = True
 
 ##minimum speed that would be considered a valid movement command (in any direction)
 MIN_SPEED = 0.01
@@ -20,28 +18,9 @@ MIN_SPEED = 0.01
 SWING_HEIGHT = 0.1
 
 from geometry_msgs.msg import Twist
-if USING_NEW_MSGS:
-    from ihmc_msgs.msg import FootstepDataListRosMessage
-    from ihmc_msgs.msg import FootstepDataRosMessage
-    from ihmc_msgs.msg import FootstepStatusRosMessage
-else:
-    from ihmc_msgs.msg import FootstepDataListMessage
-    from ihmc_msgs.msg import FootstepDataMessage
-    from ihmc_msgs.msg import FootstepStatusMessage
-
-def create_footstep():
-    global USING_NEW_MSGS
-    if USING_NEW_MSGS:
-        return FootstepDataRosMessage()
-    else:
-        return FootstepDataMessage()
-
-def create_footstep_list():
-    global USING_NEW_MSGS
-    if USING_NEW_MSGS:
-        return FootstepDataListRosMessage()
-    else:
-        return FootstepDataListMessage()
+from ihmc_msgs.msg import FootstepDataListRosMessage
+from ihmc_msgs.msg import FootstepDataRosMessage
+from ihmc_msgs.msg import FootstepStatusRosMessage
 
 ##do not increment subscriber queue size, queueing Rosmessages is undesirable
 def cmd_vel_callback(msg):
@@ -49,9 +28,9 @@ def cmd_vel_callback(msg):
     global steps_pub
     global SPEED_LIMIT
     global ANGULAR_SPEED_LIMIT
-    footstepArrayRosMessage = create_footstep_list()
-    footstepArrayRosMessage.swing_time = SWING_TIME
-    footstepArrayRosMessage.transfer_time = TRANSFER_TIME
+    footstepArrayRosMessage = FootstepDataListRosMessage()
+    footstepArrayRosMessage.default_swing_time = SWING_TIME
+    footstepArrayRosMessage.default_transfer_time = TRANSFER_TIME
     footstepArrayRosMessage.unique_id = seq
     seq += 1
     linX = msg.linear.x
@@ -98,7 +77,7 @@ def cmd_vel_callback(msg):
             waitForFootsteps(len(footstepArrayRosMessage.footstep_data_list));
 
 def createLeftfromRight(rightStep, distance = 0.35):
-    leftStep = create_footstep()
+    leftStep = FootstepDataRosMessage()
     leftStep.robot_side = LEFT
     leftStep.swing_height = SWING_HEIGHT;
     offset = [0.0, distance, 0.0]
@@ -113,7 +92,7 @@ def createLeftfromRight(rightStep, distance = 0.35):
     return leftStep
 
 def createRightfromLeft(leftStep, distance = 0.35):
-    rightStep = create_footstep()
+    rightStep = FootstepDataRosMessage()
     rightStep.robot_side = RIGHT
     leftStep.swing_height = SWING_HEIGHT
     offset = [0.0, -distance, 0.0]
@@ -134,7 +113,7 @@ def transformFootSteptoFootFrame(target_frame, step):
 
 def createFootStepInPlace(stepSide):
     global tfBuffer
-    footstep = create_footstep()
+    footstep = FootstepDataRosMessage()
     footstep.robot_side = stepSide
     footstep.swing_height = SWING_HEIGHT
     if stepSide == LEFT:
@@ -193,9 +172,9 @@ def set_initial_leg_aperture(aperture):
     global tfBuffer
     global seq
     if aperture > 0.0:
-        footstepArrayRosMessage = create_footstep_list()
-        footstepArrayRosMessage.swing_time = SWING_TIME
-        footstepArrayRosMessage.transfer_time = TRANSFER_TIME
+        footstepArrayRosMessage = FootstepDataListRosMessage()
+        footstepArrayRosMessage.default_swing_time = SWING_TIME
+        footstepArrayRosMessage.default_transfer_time = TRANSFER_TIME
         footstepArrayRosMessage.unique_id = seq
         seq += 1
         rightFoot = createFootStepInPlace(RIGHT)
@@ -208,10 +187,9 @@ def set_initial_leg_aperture(aperture):
 def test():
     global seq
     while True:
-        footstepArrayRosMessage = create_footstep_list()
-        footstepArrayRosMessage.swing_time = SWING_TIME
-        footstepArrayRosMessage.transfer_time = TRANSFER_TIME
-        footstepArrayRosMessage.swing_height = SWING_HEIGHT
+        footstepArrayRosMessage = FootstepDataListRosMessage()
+        footstepArrayRosMessage.default_swing_time = SWING_TIME
+        footstepArrayRosMessage.default_transfer_time = TRANSFER_TIME
         footstepArrayRosMessage.unique_id = seq
         seq += 1
         footstepArrayRosMessage.footstep_data_list.append(createFootStepInPlace(LEFT));
@@ -230,7 +208,6 @@ def robot_mover():
     global TRANSFER_TIME
     global INITIAL_LEG_APERTURE
     global SWING_HEIGHT
-    global USING_NEW_MSGS
     seq = 1
     rospy.init_node('robot_mover', anonymous=True)
     SPEED_LIMIT = rospy.get_param('~linear_speed_limit', 0.03)
@@ -241,12 +218,8 @@ def robot_mover():
     SWING_HEIGHT = rospy.get_param('~swing_height', 0.1)
     if (INITIAL_LEG_APERTURE > 0.0):
         print ('Initial leg aperture = ' + str(INITIAL_LEG_APERTURE))
-    if USING_NEW_MSGS:
-        step_status_sub = rospy.Subscriber('ihmc_ros/valkyrie/output/footstep_status', FootstepStatusRosMessage, footstep_status_callback)
-        steps_pub = rospy.Publisher('ihmc_ros/valkyrie/control/footstep_list', FootstepDataListRosMessage, queue_size=1)
-    else:
-        step_status_sub = rospy.Subscriber('ihmc_ros/valkyrie/output/footstep_status', FootstepStatusMessage, footstep_status_callback)
-        steps_pub = rospy.Publisher('ihmc_ros/valkyrie/control/footstep_list', FootstepDataListMessage, queue_size=1)
+    step_status_sub = rospy.Subscriber('ihmc_ros/valkyrie/output/footstep_status', FootstepStatusRosMessage, footstep_status_callback)
+    steps_pub = rospy.Publisher('ihmc_ros/valkyrie/control/footstep_list', FootstepDataListRosMessage, queue_size=1)
     cmd_vel_sub = rospy.Subscriber('ihmc_ros/valkyrie/control/cmd_vel', Twist, cmd_vel_callback, queue_size=1)  
     rate = rospy.Rate(10) # 10hz
     tfBuffer = tf2_ros.Buffer()
